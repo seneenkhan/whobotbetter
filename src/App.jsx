@@ -1,10 +1,11 @@
-import AppRouter from './routes/AppRouter'
-import './App.css'
+import Home from './pages/Home'
 
-function App() {
-  return <AppRouter />
-
-  
+const App = () => {
+  return (
+    <div className='bg-black min-h-screen'>
+      <Home />
+    </div>
+  )
 }
 
 export default App
