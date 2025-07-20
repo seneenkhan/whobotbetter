@@ -8,6 +8,7 @@ const app = express()
 app.use(cors())
 app.use(express.json())
 
+// 🧠 Claude API route
 app.post('/api/claude', async (req, res) => {
   try {
     const { prompt } = req.body

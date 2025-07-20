@@ -9,6 +9,7 @@ const Compare = () => {
   const [prompt, setPrompt] = useState('')
   const [responses, setResponses] = useState([])
   const [error, setError] = useState('')
+  const [votes, setVotes] = useState({}) // e.g., { 'GPT-3.5': 'up', 'Claude 3 Haiku': 'down' }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -17,7 +18,6 @@ const Compare = () => {
 
     try {
       const [gptRes, claudeRes] = await Promise.all([
-        // OpenAI API call (frontend OK)
         axios.post(
           'https://api.openai.com/v1/chat/completions',
           {
@@ -31,25 +31,37 @@ const Compare = () => {
             },
           }
         ),
-        // Claude API via proxy (avoids CORS)
         axios.post('http://localhost:8000/api/claude', { prompt })
       ])
 
-      setResponses([
+      const updatedResponses = [
         {
           label: 'GPT-3.5',
           response: gptRes.data.choices[0].message.content.trim(),
         },
         {
           label: 'Claude 3 Haiku',
-          response: claudeRes.data.content[0].text.trim(),
+          response: claudeRes.data.content?.[0]?.text?.trim() || 'No response from Claude',
         }
-      ])
+      ]
+
+      setResponses(updatedResponses)
+      setVotes({}) // reset votes on new submission
     } catch (err) {
       console.error('🔴 API Error:', JSON.stringify(err.response?.data || err.message, null, 2))
-      setError(err.response?.data?.error?.message || 'Something went wrong. Check your keys or try again.')
+      setError(
+        err.response?.data?.error?.message ||
+        'Something went wrong. Check your keys or try again.'
+      )
       setResponses([])
     }
+  }
+
+  const handleVote = (label, direction) => {
+    setVotes((prev) => ({
+      ...prev,
+      [label]: prev[label] === direction ? null : direction
+    }))
   }
 
   return (
@@ -64,7 +76,13 @@ const Compare = () => {
 
       <div className="grid md:grid-cols-2 gap-4">
         {responses.map((r, i) => (
-          <AIResponseCard key={i} label={r.label} response={r.response} />
+          <AIResponseCard
+            key={i}
+            label={r.label}
+            response={r.response}
+            voted={votes[r.label]}
+            onVote={handleVote}
+          />
         ))}
       </div>
     </div>
