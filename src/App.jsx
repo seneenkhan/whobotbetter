@@ -1,9 +1,9 @@
-import Home from './pages/Home'
+import AppRouter from './routes/AppRouter'
 
 const App = () => {
   return (
-    <div className='bg-black min-h-screen'>
-      <Home />
+    <div className="bg-black text-white min-h-screen">
+      <AppRouter />
     </div>
   )
 }

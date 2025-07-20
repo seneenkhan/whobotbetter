@@ -1,18 +1,16 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import Home from '../pages/Home'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import Compare from '../pages/Compare'
-import Vote from '../pages/Vote'
-import Result from '../pages/Result'
+import Home from '../pages/Home' // or a placeholder if it's empty
 
-export default function AppRouter() {
+const AppRouter = () => {
   return (
-    <BrowserRouter>
+    <Router>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/compare" element={<Compare />} />
-        <Route path="/vote" element={<Vote />} />
-        <Route path="/result/:slug" element={<Result />} />
       </Routes>
-    </BrowserRouter>
+    </Router>
   )
 }
+
+export default AppRouter
