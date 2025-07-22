@@ -10,6 +10,7 @@ const Compare = () => {
   const [selectedBest, setSelectedBest] = useState(null)
   const [hasVoted, setHasVoted] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [responseTimes, setResponseTimes] = useState({})
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -17,9 +18,17 @@ const Compare = () => {
     if (!prompt.trim()) return
     setIsLoading(true)
     setSelectedBest(null)
-    setHasVoted(false) // Reset voting state for new prompt
+    setHasVoted(false)
+    setResponseTimes({})
 
     try {
+      // Start timing for all requests
+      const startTimes = {
+        gpt: Date.now(),
+        claude: Date.now(),
+        gemini: Date.now()
+      }
+
       const [gptRes, claudeRes, geminiRes] = await Promise.all([
         axios.post(
           'https://api.openai.com/v1/chat/completions',
@@ -34,25 +43,49 @@ const Compare = () => {
               'Content-Type': 'application/json',
             },
           }
-        ),
-        axios.post('http://localhost:8000/api/claude', { prompt }),
+        ).then(res => {
+          const endTime = Date.now()
+          return {
+            ...res,
+            responseTime: endTime - startTimes.gpt
+          }
+        }),
+        axios.post('http://localhost:8000/api/claude', { prompt })
+          .then(res => {
+            const endTime = Date.now()
+            return {
+              ...res,
+              responseTime: endTime - startTimes.claude
+            }
+          }),
         axios.post('http://localhost:8000/api/gemini', { prompt })
+          .then(res => {
+            const endTime = Date.now()
+            return {
+              ...res,
+              responseTime: endTime - startTimes.gemini
+            }
+          })
       ])
 
       setResponses([
         {
           label: 'GPT-3.5',
           response: gptRes.data.choices[0].message.content.trim(),
+          responseTime: gptRes.responseTime
         },
         {
           label: 'Claude 3 Haiku',
           response: claudeRes.data.content?.[0]?.text?.trim() || 'No response from Claude',
+          responseTime: claudeRes.responseTime
         },
         {
           label: 'Gemini Pro',
           response: geminiRes.data?.text || geminiRes.data?.candidates?.[0]?.content?.parts?.[0]?.text || 'No response from Gemini',
+          responseTime: geminiRes.responseTime
         }
       ])
+
     } catch (err) {
       console.error('API Error:', err)
       setError(
@@ -68,12 +101,12 @@ const Compare = () => {
 
   const handleSelectBest = (modelLabel) => {
     setSelectedBest(modelLabel)
-    setHasVoted(true) // Disable further voting
+    setHasVoted(true)
     // Add Supabase saving here later
   }
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto p-6">
+    <div className="space-y-6 max-w-6xl mx-auto p-6">
       <PromptInput 
         prompt={prompt} 
         setPrompt={setPrompt} 
@@ -87,12 +120,13 @@ const Compare = () => {
         </div>
       )}
 
-      <div className="grid md:grid-cols-3 gap-4">
+      <div className="grid md:grid-cols-3 gap-6">
         {responses.map((response) => (
           <AIResponseCard
             key={response.label}
             label={response.label}
             response={response.response}
+            responseTime={response.responseTime}
             isBest={selectedBest === response.label}
             isDisabled={hasVoted && selectedBest !== response.label}
             onSelectBest={() => handleSelectBest(response.label)}
