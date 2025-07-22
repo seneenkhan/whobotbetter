@@ -7,7 +7,8 @@ const Compare = () => {
   const [prompt, setPrompt] = useState('')
   const [responses, setResponses] = useState([])
   const [error, setError] = useState('')
-  const [votes, setVotes] = useState({})
+  const [selectedBest, setSelectedBest] = useState(null)
+  const [hasVoted, setHasVoted] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
   const handleSubmit = async (e) => {
@@ -15,6 +16,8 @@ const Compare = () => {
     setError('')
     if (!prompt.trim()) return
     setIsLoading(true)
+    setSelectedBest(null)
+    setHasVoted(false) // Reset voting state for new prompt
 
     try {
       const [gptRes, claudeRes, geminiRes] = await Promise.all([
@@ -36,7 +39,7 @@ const Compare = () => {
         axios.post('http://localhost:8000/api/gemini', { prompt })
       ])
 
-      const updatedResponses = [
+      setResponses([
         {
           label: 'GPT-3.5',
           response: gptRes.data.choices[0].message.content.trim(),
@@ -49,10 +52,7 @@ const Compare = () => {
           label: 'Gemini Pro',
           response: geminiRes.data?.text || geminiRes.data?.candidates?.[0]?.content?.parts?.[0]?.text || 'No response from Gemini',
         }
-      ]
-
-      setResponses(updatedResponses)
-      setVotes({})
+      ])
     } catch (err) {
       console.error('API Error:', err)
       setError(
@@ -66,11 +66,10 @@ const Compare = () => {
     }
   }
 
-  const handleVote = (label, direction) => {
-    setVotes((prev) => ({
-      ...prev,
-      [label]: prev[label] === direction ? null : direction
-    }))
+  const handleSelectBest = (modelLabel) => {
+    setSelectedBest(modelLabel)
+    setHasVoted(true) // Disable further voting
+    // Add Supabase saving here later
   }
 
   return (
@@ -89,14 +88,15 @@ const Compare = () => {
       )}
 
       <div className="grid md:grid-cols-3 gap-4">
-        {responses.map((response, index) => (
+        {responses.map((response) => (
           <AIResponseCard
-            key={index}
+            key={response.label}
             label={response.label}
             response={response.response}
-            voted={votes[response.label]}
-            onVote={handleVote}
-            isLoading={isLoading && !responses[index]?.response}
+            isBest={selectedBest === response.label}
+            isDisabled={hasVoted && selectedBest !== response.label}
+            onSelectBest={() => handleSelectBest(response.label)}
+            isLoading={isLoading}
           />
         ))}
       </div>
