@@ -9,7 +9,7 @@ const Compare = () => {
   const [prompt, setPrompt] = useState('')
   const [responses, setResponses] = useState([])
   const [error, setError] = useState('')
-  const [votes, setVotes] = useState({}) // e.g., { 'GPT-3.5': 'up', 'Claude 3 Haiku': 'down' }
+  const [votes, setVotes] = useState({})
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -46,13 +46,15 @@ const Compare = () => {
       ]
 
       setResponses(updatedResponses)
-      setVotes({}) // reset votes on new submission
+      setVotes({})
     } catch (err) {
       console.error('🔴 API Error:', JSON.stringify(err.response?.data || err.message, null, 2))
       setError(
         err.response?.data?.error?.message ||
         'Something went wrong. Check your keys or try again.'
       )
+      console.log("🔑 OpenAI Key:", openaiKey);
+
       setResponses([])
     }
   }
