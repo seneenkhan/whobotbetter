@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import PromptInput from '../components/PromptInput'
 import AIResponseCard from '../components/AiResponseCard'
-import axios from 'axios'
+
+const SERVER_URL = import.meta.env.VITE_SERVER_URL
 
 const Compare = () => {
   const [prompt, setPrompt] = useState('')
@@ -10,90 +11,55 @@ const Compare = () => {
   const [selectedBest, setSelectedBest] = useState(null)
   const [hasVoted, setHasVoted] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [responseTimes, setResponseTimes] = useState({})
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
     if (!prompt.trim()) return
+
     setIsLoading(true)
     setSelectedBest(null)
     setHasVoted(false)
-    setResponseTimes({})
+    setResponses([])
 
     try {
-      // Start timing for all requests
-      const startTimes = {
-        gpt: Date.now(),
-        claude: Date.now(),
-        gemini: Date.now()
-      }
+      const startTime = Date.now()
 
-      const [gptRes, claudeRes, geminiRes] = await Promise.all([
-        axios.post(
-          'https://api.openai.com/v1/chat/completions',
-          {
-            model: 'gpt-3.5-turbo',
-            messages: [{ role: 'user', content: prompt }],
-            temperature: 0.7,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
-              'Content-Type': 'application/json',
-            },
-          }
-        ).then(res => {
-          const endTime = Date.now()
-          return {
-            ...res,
-            responseTime: endTime - startTimes.gpt
-          }
-        }),
-        axios.post('http://localhost:8000/api/claude', { prompt })
-          .then(res => {
-            const endTime = Date.now()
-            return {
-              ...res,
-              responseTime: endTime - startTimes.claude
-            }
-          }),
-        axios.post('http://localhost:8000/api/gemini', { prompt })
-          .then(res => {
-            const endTime = Date.now()
-            return {
-              ...res,
-              responseTime: endTime - startTimes.gemini
-            }
-          })
-      ])
+      const res = await fetch(`${SERVER_URL}/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt }),
+      })
 
-      setResponses([
+      const data = await res.json()
+      const totalTime = Date.now() - startTime
+
+      if (!res.ok) throw new Error(data?.error || 'Something went wrong.')
+
+      const responseData = [
         {
           label: 'GPT-3.5',
-          response: gptRes.data.choices[0].message.content.trim(),
-          responseTime: gptRes.responseTime
+          response: data.gpt || 'No response from GPT-3.5',
         },
         {
           label: 'Claude 3 Haiku',
-          response: claudeRes.data.content?.[0]?.text?.trim() || 'No response from Claude',
-          responseTime: claudeRes.responseTime
+          response: data.claude || 'No response from Claude',
         },
         {
           label: 'Gemini Pro',
-          response: geminiRes.data?.text || geminiRes.data?.candidates?.[0]?.content?.parts?.[0]?.text || 'No response from Gemini',
-          responseTime: geminiRes.responseTime
-        }
-      ])
+          response: data.gemini || 'No response from Gemini',
+        },
+      ]
 
+      setResponses(
+        responseData.map((r) => ({
+          ...r,
+          responseTime: totalTime,
+        }))
+      )
     } catch (err) {
       console.error('API Error:', err)
-      setError(
-        err.response?.data?.error?.message ||
-        err.response?.data?.message ||
-        'Something went wrong. Please try again.'
-      )
-      setResponses([])
+      setError(err.message || 'Something went wrong. Please try again.')
     } finally {
       setIsLoading(false)
     }
@@ -102,7 +68,7 @@ const Compare = () => {
   const handleSelectBest = (modelLabel) => {
     setSelectedBest(modelLabel)
     setHasVoted(true)
-    // Add Supabase saving here later
+    // TODO: Add Supabase vote-saving logic here
   }
 
   return (
