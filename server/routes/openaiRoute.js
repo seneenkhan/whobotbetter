@@ -7,7 +7,7 @@ const openai = new OpenAI({
   apiKey: process.env.VITE_OPENAI_API_KEY,
 })
 
-router.post('/', async (req, res) => {
+router.post('/generate', async (req, res) => {
   const { prompt } = req.body
   try {
     const response = await openai.chat.completions.create({
