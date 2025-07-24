@@ -1,13 +1,15 @@
 import express from 'express'
 import OpenAI from 'openai'
+import dotenv from 'dotenv'
+dotenv.config()
+
 
 const router = express.Router()
 
 const openai = new OpenAI({
-  apiKey: process.env.VITE_OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY,
 })
-
-router.post('/generate', async (req, res) => {
+router.post('/api/openai', async (req, res) => {
   const { prompt } = req.body
   try {
     const response = await openai.chat.completions.create({
