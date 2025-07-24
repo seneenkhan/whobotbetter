@@ -14,7 +14,6 @@ const AIResponseCard = ({
           : 'bg-zinc-800/90 border-zinc-700/60 hover:border-zinc-600/80 hover:bg-zinc-800/80'}
         min-h-[300px] max-w-md relative`}>
   
-        {/* Model label with loading indicator */}
         <div className="flex justify-between items-start">
           <h2 className={`text-xl font-semibold mb-2 ${
             isBest ? 'text-green-400' : 'text-white'
@@ -33,15 +32,11 @@ const AIResponseCard = ({
             </div>
           )}
         </div>
-  
-        {/* Response time badge */}
         {!isLoading && responseTime && (
           <div className="absolute top-4 right-4 bg-zinc-700/80 text-zinc-300 text-xs px-2 py-1 rounded-full">
             {responseTime}ms
           </div>
         )}
-  
-        {/* Response content */}
         <div className={`flex-1 overflow-y-auto pr-3 custom-scrollbar ${
           isLoading ? 'flex items-center justify-center' : ''
         }`}>
@@ -65,8 +60,6 @@ const AIResponseCard = ({
             </div>
           )}
         </div>
-  
-        {/* Selection button */}
         <div className="mt-auto">
           <button
             onClick={() => onSelectBest(label)}
@@ -100,8 +93,6 @@ const AIResponseCard = ({
             )}
           </button>
         </div>
-  
-        {/* Status indicator */}
         {isBest !== null && !isLoading && (
           <p className={`text-xs mt-2 text-center ${
             isBest === label ? 'text-green-400' : 'text-zinc-500'
