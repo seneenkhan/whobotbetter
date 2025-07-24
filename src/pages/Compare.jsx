@@ -25,30 +25,40 @@ const Compare = () => {
     try {
       const startTime = Date.now()
 
-      const res = await fetch(`${SERVER_URL}/api/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt }),
-      })
+      const [gptRes, claudeRes, geminiRes] = await Promise.all([
+        fetch(`${SERVER_URL}/api/openai`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt }),
+        }),
+        fetch(`${SERVER_URL}/api/claude`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt }),
+        }),
+        fetch(`${SERVER_URL}/api/gemini`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt }),
+        }),
+      ])
 
-      const data = await res.json()
+      const [gptData, claudeData, geminiData] = await Promise.all([
+        gptRes.json(),
+        claudeRes.json(),
+        geminiRes.json(),
+      ])
+
+      if (!gptRes.ok || !claudeRes.ok || !geminiRes.ok) {
+        throw new Error('One or more models failed to respond.')
+      }
+
       const totalTime = Date.now() - startTime
 
-      if (!res.ok) throw new Error(data?.error || 'Something went wrong.')
-
       const responseData = [
-        {
-          label: 'GPT-3.5',
-          response: data.gpt || 'No response from GPT-3.5',
-        },
-        {
-          label: 'Claude 3 Haiku',
-          response: data.claude || 'No response from Claude',
-        },
-        {
-          label: 'Gemini Pro',
-          response: data.gemini || 'No response from Gemini',
-        },
+        { label: 'GPT-3.5', response: gptData.output || 'No response from GPT-3.5' },
+        { label: 'Claude 3 Haiku', response: claudeData.output || 'No response from Claude' },
+        { label: 'Gemini Pro', response: geminiData.output || 'No response from Gemini' },
       ]
 
       setResponses(
