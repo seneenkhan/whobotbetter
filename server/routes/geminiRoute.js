@@ -13,8 +13,9 @@ const MODEL_CONFIG = {
   'gemini-1.5-flash': 'gemini-1.5-flash-latest'
 };
 
-router.post('/api/gemini', async (req, res) => {  // Changed to match frontend
-  const { prompt } = req.body;  // Frontend only sends prompt
+// Route should be '/' since the main server already handles '/api/gemini'
+router.post('/', async (req, res) => {
+  const { prompt } = req.body;
 
   if (!prompt) {
     return res.status(400).json({ error: 'Prompt is required' });
@@ -22,7 +23,7 @@ router.post('/api/gemini', async (req, res) => {  // Changed to match frontend
 
   try {
     // Use default model (or implement model selection if needed)
-    const model = genAI.getGenerativeModel({ 
+    const model = genAI.getGenerativeModel({
       model: MODEL_CONFIG['gemini-1.5-pro'],
       generationConfig: {
         temperature: 0.9,
@@ -37,22 +38,22 @@ router.post('/api/gemini', async (req, res) => {  // Changed to match frontend
         parts: [{ text: prompt }]
       }]
     });
-    
+       
     const response = await result.response;
-    
+       
     // Standardize response format to match frontend expectation
-    res.json({ 
-      output: response.text() || 'No response from Gemini',  // Changed to 'output'
+    res.json({
+      output: response.text() || 'No response from Gemini',
       modelUsed: MODEL_CONFIG['gemini-1.5-pro'],
       // Include safety ratings if needed by frontend
       ...(response.candidates?.[0]?.safetyRatings && {
         safetyRatings: response.candidates[0].safetyRatings
       })
     });
-    
+       
   } catch (error) {
     console.error('Gemini API Error:', error);
-    
+       
     // Enhanced error handling
     let statusCode = 500;
     let errorMessage = 'Failed to generate content';
@@ -67,6 +68,9 @@ router.post('/api/gemini', async (req, res) => {  // Changed to match frontend
     } else if (error.status === 429) {
       statusCode = 429;
       errorMessage = 'Rate limit exceeded';
+    } else if (error.message.includes('SAFETY')) {
+      statusCode = 400;
+      errorMessage = 'Content blocked by safety filters';
     }
 
     res.status(statusCode).json({
