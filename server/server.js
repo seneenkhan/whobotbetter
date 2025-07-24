@@ -35,9 +35,12 @@ app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).send('Something broke!');
 });
+app.get('/health', (req, res) => {
+  res.sendStatus(200);
+});
 
 // Start server
 const PORT = process.env.PORT || 8000;
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {  // Add '0.0.0.0' for Render
   console.log(`Server running on port ${PORT}`);
 });
