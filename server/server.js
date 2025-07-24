@@ -1,50 +1,39 @@
-
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 
 dotenv.config();
+
 const app = express();
+
 const allowedOrigins = [
-  'http://localhost:5173', 
-  'https://whobotbetter.vercel.app', 
-  'https://whobotbetter-*.vercel.app' 
+  'http://localhost:5173',
+  'https://whobotbetter.vercel.app',
+  'https://whobotbetter-*.vercel.app'
 ];
 
 app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.some(allowedOrigin => 
-      origin === allowedOrigin || 
-      origin.match(/^https:\/\/whobotbetter-.*\.vercel\.app$/) 
-    )) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
-  maxAge: 86400 
+  origin: allowedOrigins,
+  credentials: true
 }));
-app.options('*', cors());
-app.use(express.json({ limit: '10mb' })); 
-app.use(express.urlencoded({ extended: true }));
 
-import claudeRoute from './routes/claudeRoute.js';
-import geminiRoute from './routes/geminiRoute.js';
-import openaiRoute from './routes/openaiRoute.js';
+app.use(express.json());
+
+import claudeRoute from './routes/claudeRoute';
+import geminiRoute from './routes/geminiRoute';
+import openaiRoute from './routes/openaiRoute';
+
 
 app.use('/api/claude', claudeRoute);
 app.use('/api/gemini', geminiRoute);
 app.use('/api/openai', openaiRoute);
-app.get('/', (req, res) => res.json({ status: 'Server running' }));
+
+app.get('/', (req, res) => res.json({ status: 'OK' }));
 app.get('/health', (req, res) => res.sendStatus(200));
+
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Server error' });
+  console.error('Server Error:', err);
+  res.status(500).json({ error: 'Internal Server Error' });
 });
 
 const PORT = process.env.PORT || 8000;
