@@ -8,21 +8,29 @@ const app = express();
 
 const allowedOrigins = [
   'http://localhost:5173',
-  'https://whobotbetter.vercel.app',
-  'https://whobotbetter-*.vercel.app'
+  'https://whobotbetter-p410jg1xs-seneenkhans-projects.vercel.app'
 ];
 
 app.use(cors({
-  origin: allowedOrigins,
+  origin: (origin, callback) => {
+    if (
+      !origin ||
+      allowedOrigins.includes(origin) ||
+      origin.endsWith('.vercel.app')
+    ) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 
 app.use(express.json());
 
-import claudeRoute from './routes/claudeRoute';
-import geminiRoute from './routes/geminiRoute';
-import openaiRoute from './routes/openaiRoute';
-
+import claudeRoute from './routes/claudeRoute.js';
+import geminiRoute from './routes/geminiRoute.js';
+import openaiRoute from './routes/openaiRoute.js';
 
 app.use('/api/claude', claudeRoute);
 app.use('/api/gemini', geminiRoute);
